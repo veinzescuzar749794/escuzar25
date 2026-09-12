@@ -78,13 +78,14 @@ response for both.)*
 
 **Confirmed order**
 ```
-<img width="1920" height="1035" alt="{535643B6-51BE-4BD1-9402-72A3C4445216}" src="https://github.com/user-attachments/assets/99146631-ece5-4b01-86dd-43ef18121a38" />
+
 
 ```
 
 **Rejected order**
 ```
-<img width="1916" height="1036" alt="{D8DA70AC-318A-4A63-8161-D20E57BAD95D}" src="https://github.com/user-attachments/assets/be45a06d-1e47-4914-99aa-343178957472" />
+<img width="1916" height="1034" alt="{2EB5AC32-4BE4-4B75-8573-D64238EE27BF}" src="https://github.com/user-attachments/assets/e5bb4aef-cb83-4605-bcbb-4b1deaae7174" />
+
 
 ```
 
