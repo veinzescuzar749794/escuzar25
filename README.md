@@ -78,16 +78,14 @@ response for both.)*
 
 **Confirmed order**
 ```
-POST http://localhost:8080/api/orders
-Request:  { "productId": "P100", "quantity": 1 }
-Response: [ paste response body / screenshot here ]
+<img width="1920" height="1035" alt="{535643B6-51BE-4BD1-9402-72A3C4445216}" src="https://github.com/user-attachments/assets/99146631-ece5-4b01-86dd-43ef18121a38" />
+
 ```
 
 **Rejected order**
 ```
-POST http://localhost:8080/api/orders
-Request:  { "productId": "P300", "quantity": 1 }
-Response: [ paste response body / screenshot here ]
+<img width="1916" height="1036" alt="{D8DA70AC-318A-4A63-8161-D20E57BAD95D}" src="https://github.com/user-attachments/assets/be45a06d-1e47-4914-99aa-343178957472" />
+
 ```
 
 ## Reflection
