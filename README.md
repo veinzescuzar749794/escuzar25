@@ -83,11 +83,8 @@ response for both.)*
 ```
 
 **Rejected order**
-```
-<img width="1916" height="1034" alt="{2EB5AC32-4BE4-4B75-8573-D64238EE27BF}" src="https://github.com/user-attachments/assets/e5bb4aef-cb83-4605-bcbb-4b1deaae7174" />
+<img width="1920" height="1034" alt="{5262B76D-922F-4A59-A7A6-F175D121F5CC}" src="https://github.com/user-attachments/assets/ac125689-faab-4ee1-9130-6345e2c14c70" />
 
-
-```
 
 ## Reflection
 
