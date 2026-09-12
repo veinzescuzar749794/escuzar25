@@ -77,18 +77,12 @@ Dev server starts on `http://localhost:5173`.
 response for both.)*
 
 **Confirmed order**
-```
-POST http://localhost:8080/api/orders
-Request:  { "productId": "P100", "quantity": 1 }
-Response: [ paste response body / screenshot here ]
-```
+<img width="1904" height="1035" alt="{27ADA026-01BB-46E5-B8BC-A7602557AFD0}" src="https://github.com/user-attachments/assets/071552be-2542-4d93-a034-4026db8a96b3" />
+
 
 **Rejected order**
-```
-POST http://localhost:8080/api/orders
-Request:  { "productId": "P300", "quantity": 1 }
-Response: [ paste response body / screenshot here ]
-```
+<img width="1920" height="1034" alt="{5262B76D-922F-4A59-A7A6-F175D121F5CC}" src="https://github.com/user-attachments/assets/ac125689-faab-4ee1-9130-6345e2c14c70" />
+
 
 ## Reflection
 
