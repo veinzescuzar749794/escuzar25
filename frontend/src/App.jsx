@@ -2,8 +2,14 @@ import { useState, useEffect, useCallback } from 'react'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
+const DEFAULT_INVENTORY = [
+  { productId: 'P100', name: 'Wireless Mouse', stock: 25 },
+  { productId: 'P200', name: 'Mechanical Keyboard', stock: 4 },
+  { productId: 'P300', name: 'USB-C Hub', stock: 0 },
+]
+
 export default function App() {
-  const [inventory, setInventory] = useState([])
+  const [inventory, setInventory] = useState(DEFAULT_INVENTORY)
   const [orders, setOrders] = useState([])
   const [notifications, setNotifications] = useState([])
 
@@ -23,35 +29,30 @@ export default function App() {
   const fetchData = useCallback(async () => {
     setIsLoadingData(true)
     try {
-      const [invRes, ordRes, notifRes] = await Promise.all([
-        fetch(`${API_BASE}/api/inventory`),
-        fetch(`${API_BASE}/api/orders`),
-        fetch(`${API_BASE}/api/notifications`),
+      const [invResult, ordResult, notifResult] = await Promise.allSettled([
+        fetch(`${API_BASE}/api/inventory`).then((r) => (r.ok ? r.json() : Promise.reject(r.status))),
+        fetch(`${API_BASE}/api/orders`).then((r) => (r.ok ? r.json() : Promise.reject(r.status))),
+        fetch(`${API_BASE}/api/notifications`).then((r) => (r.ok ? r.json() : Promise.reject(r.status))),
       ])
 
-      if (invRes.ok) {
-        const invData = await invRes.json()
-        setInventory(invData)
-        if (invData.length > 0 && !selectedProductId) {
-          setSelectedProductId(invData[0].productId)
-        }
+      if (invResult.status === 'fulfilled' && Array.isArray(invResult.value) && invResult.value.length > 0) {
+        setInventory(invResult.value)
+        setSelectedProductId((prev) => prev || invResult.value[0].productId)
       }
 
-      if (ordRes.ok) {
-        const ordData = await ordRes.json()
-        setOrders(ordData)
+      if (ordResult.status === 'fulfilled' && Array.isArray(ordResult.value)) {
+        setOrders(ordResult.value)
       }
 
-      if (notifRes.ok) {
-        const notifData = await notifRes.json()
-        setNotifications(notifData)
+      if (notifResult.status === 'fulfilled' && Array.isArray(notifResult.value)) {
+        setNotifications(notifResult.value)
       }
     } catch (err) {
       console.error('Failed to load dashboard data:', err)
     } finally {
       setIsLoadingData(false)
     }
-  }, [selectedProductId])
+  }, [])
 
   useEffect(() => {
     fetchData()
@@ -334,28 +335,36 @@ export default function App() {
                 </tr>
               </thead>
               <tbody>
-                {inventory.map((item) => {
-                  const isOut = item.stock <= 0
-                  const isLow = item.stock > 0 && item.stock < 5
-                  const rowClass = isOut ? 'row-out-of-stock' : isLow ? 'row-low-stock' : ''
+                {inventory.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" style={{ textAlign: 'center', color: '#94a3b8', padding: '1.5rem' }}>
+                      Loading inventory items...
+                    </td>
+                  </tr>
+                ) : (
+                  inventory.map((item) => {
+                    const isOut = item.stock <= 0
+                    const isLow = item.stock > 0 && item.stock < 5
+                    const rowClass = isOut ? 'row-out-of-stock' : isLow ? 'row-low-stock' : ''
 
-                  return (
-                    <tr key={item.productId} className={rowClass}>
-                      <td><code>{item.productId}</code></td>
-                      <td>{item.name}</td>
-                      <td><strong>{item.stock}</strong></td>
-                      <td>
-                        {isOut ? (
-                          <span className="badge badge-red">Out of Stock</span>
-                        ) : isLow ? (
-                          <span className="badge badge-amber">Low Stock (&lt; 5)</span>
-                        ) : (
-                          <span className="badge badge-green">In Stock</span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
+                    return (
+                      <tr key={item.productId} className={rowClass}>
+                        <td><code>{item.productId}</code></td>
+                        <td>{item.name}</td>
+                        <td><strong>{item.stock}</strong></td>
+                        <td>
+                          {isOut ? (
+                            <span className="badge badge-red">Out of Stock</span>
+                          ) : isLow ? (
+                            <span className="badge badge-amber">Low Stock (&lt; 5)</span>
+                          ) : (
+                            <span className="badge badge-green">In Stock</span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
               </tbody>
             </table>
           </section>
