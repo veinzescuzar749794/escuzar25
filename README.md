@@ -162,8 +162,7 @@ Capture and paste screenshots or request/response payloads from DevTools Network
   1. `POST /api/orders/{orderId}/cancel`
      - Response: `200 OK` with order status updated to `CANCELLED`.
   2. `GET /api/inventory`
-     - Response: Shows stock for cancelled items incremented back by the reserved quantities.
-*(Insert your screenshot of DevTools Network tab showing `cancel` call followed by `GET /api/inventory` with restored stock)*
+![Scenario 3 - Order Cancellation and Restock](screenshots/scenario3-cancel.png)
 
 ---
 
