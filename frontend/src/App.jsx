@@ -176,8 +176,8 @@ export default function App() {
     <div className="container">
       <header className="header">
         <div className="header-content">
-          <h1>Modular Monolith Store</h1>
-          <span className="subtitle">Lab 2: Order, Inventory & Notification Modules</span>
+          <h1>EscuTech Store</h1>
+          <span className="subtitle">Modular Order, Inventory & Notification Hub</span>
         </div>
         <button className="refresh-btn" onClick={fetchData} disabled={isLoadingData}>
           {isLoadingData ? 'Refreshing...' : '🔄 Refresh Data'}
