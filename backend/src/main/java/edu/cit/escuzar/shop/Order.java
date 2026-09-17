@@ -1,13 +1,18 @@
 package edu.cit.escuzar.shop;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -18,12 +23,6 @@ public class Order {
     @Column(name = "order_id")
     private Long orderId;
 
-    @Column(name = "product_id")
-    private String productId;
-
-    @Column(name = "quantity")
-    private int quantity;
-
     @Column(name = "status")
     private String status;
 
@@ -33,13 +32,14 @@ public class Order {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<OrderItem> items = new ArrayList<>();
+
     protected Order() {
         // required by JPA
     }
 
-    public Order(String productId, int quantity, String status, String reason, Instant createdAt) {
-        this.productId = productId;
-        this.quantity = quantity;
+    public Order(String status, String reason, Instant createdAt) {
         this.status = status;
         this.reason = reason;
         this.createdAt = createdAt;
@@ -49,23 +49,32 @@ public class Order {
         return orderId;
     }
 
-    public String getProductId() {
-        return productId;
-    }
-
-    public int getQuantity() {
-        return quantity;
-    }
-
     public String getStatus() {
         return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public String getReason() {
         return reason;
     }
 
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public List<OrderItem> getItems() {
+        return items;
+    }
+
+    public void addItem(OrderItem item) {
+        items.add(item);
+        item.setOrder(this);
     }
 }

@@ -2,10 +2,18 @@ spring:
   application:
     name: modular-monolith-lab
   datasource:
-    url: ${SUPABASE_DB_URL}
-    username: ${SUPABASE_DB_USERNAME}
-    password: ${SUPABASE_DB_PASSWORD}
+    url: ${SUPABASE_DB_URL:${SPRING_DATASOURCE_URL}}
+    username: ${SUPABASE_DB_USERNAME:${SPRING_DATASOURCE_USERNAME}}
+    password: ${SUPABASE_DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD}}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      max-lifetime: 60000
+      idle-timeout: 30000
+      keepalive-time: 15000
+      connection-timeout: 10000
+      minimum-idle: 2
+      maximum-pool-size: 5
+      connection-test-query: SELECT 1
   jpa:
     hibernate:
       # Tables are created via sql/schema.sql against Supabase, not by Hibernate.
@@ -19,6 +27,8 @@ spring:
 app:
   cors:
     allowed-origin: ${APP_CORS_ALLOWED_ORIGIN:http://localhost:5173}
+  inventory:
+    low-stock-threshold: ${APP_INVENTORY_LOW_STOCK_THRESHOLD:5}
 
 server:
   port: ${PORT:8080}
