@@ -192,7 +192,8 @@ Capture and paste screenshots or request/response payloads from DevTools Network
     }
   ]
   ```
-*(Insert your screenshot of DevTools Network tab and UI showing all three notification categories)*
+
+![Scenario 4 - Notifications Feed with Low Stock Alert](screenshots/scenario4-notifications.png)
 
 ---
 
