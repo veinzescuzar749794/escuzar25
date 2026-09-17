@@ -152,8 +152,7 @@ Capture and paste screenshots or request/response payloads from DevTools Network
     "inventory": [ ... ]
   }
   ```
-- **Verification:** Inspect `GET /api/inventory` — verify `P100` stock did **not** decrease; zero partial reservation occurred.
-*(Insert your screenshot of DevTools Network tab showing the REJECTED response with no reservations below)*
+![Scenario 2 - Rejected Order](screenshots/scenario2-rejected.png)
 
 ---
 
