@@ -2,9 +2,9 @@ spring:
   application:
     name: modular-monolith-lab
   datasource:
-    url: ${SUPABASE_DB_URL:${SPRING_DATASOURCE_URL}}
-    username: ${SUPABASE_DB_USERNAME:${SPRING_DATASOURCE_USERNAME}}
-    password: ${SUPABASE_DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD}}
+    url: ${SUPABASE_DB_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/postgres}}
+    username: ${SUPABASE_DB_USERNAME:${SPRING_DATASOURCE_USERNAME:postgres}}
+    password: ${SUPABASE_DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD:postgres}}
     driver-class-name: org.postgresql.Driver
     hikari:
       max-lifetime: 60000
@@ -31,6 +31,11 @@ app:
     allowed-origin: ${APP_CORS_ALLOWED_ORIGIN:http://localhost:5173}
   inventory:
     low-stock-threshold: ${APP_INVENTORY_LOW_STOCK_THRESHOLD:5}
+
+legacy-supply:
+  base-url: ${LS_BASE_URL:https://legacysupply.onrender.com/api/v1}
+  client-id: ${LS_CLIENT_ID:22-1382-413}
+  api-key: ${LS_API_KEY:}
 
 server:
   port: ${PORT:8080}

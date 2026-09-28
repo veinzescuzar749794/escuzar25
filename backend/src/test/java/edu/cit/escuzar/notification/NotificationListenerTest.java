@@ -4,6 +4,10 @@ import edu.cit.escuzar.inventory.event.LowStockEvent;
 import edu.cit.escuzar.shop.event.OrderItemDto;
 import edu.cit.escuzar.shop.event.OrderPlacedEvent;
 import edu.cit.escuzar.shop.event.OrderRejectedEvent;
+import edu.cit.escuzar.supplier.SupplierGateway;
+import edu.cit.escuzar.supplier.SupplierOrderDeliveredEvent;
+import edu.cit.escuzar.supplier.SupplierOrderResult;
+import edu.cit.escuzar.supplier.SupplierOrderStatus;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -11,13 +15,17 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class NotificationListenerTest {
 
     private final NotificationRepository notificationRepository = mock(NotificationRepository.class);
-    private final NotificationListener notificationListener = new NotificationListener(notificationRepository);
+    private final SupplierGateway supplierGateway = mock(SupplierGateway.class);
+    private final NotificationListener notificationListener = new NotificationListener(notificationRepository, supplierGateway);
 
     @Test
     void logsOrderPlacedNotification() {
@@ -53,17 +61,37 @@ class NotificationListenerTest {
     }
 
     @Test
-    void logsLowStockReorderNeededNotification() {
+    void callsSupplierGatewayAndLogsAutoReorderNotificationOnLowStock() {
         LowStockEvent event = new LowStockEvent("P200", "Mechanical Keyboard", 3, 5);
 
+        when(supplierGateway.placeOrder(eq("P200"), anyInt()))
+                .thenReturn(new SupplierOrderResult(1L, "P200", "RO-1", 1, 24, SupplierOrderStatus.ACCEPTED, "PO-100231", "OK"));
+
         notificationListener.handleLowStock(event);
+
+        verify(supplierGateway).placeOrder(eq("P200"), eq(17));
 
         ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
         verify(notificationRepository).save(captor.capture());
 
         Notification notification = captor.getValue();
-        assertTrue(notification.getMessage().startsWith("Reorder needed: Low stock for P200"));
-        assertTrue(notification.getMessage().contains("remaining: 3 units"));
+        assertTrue(notification.getMessage().startsWith("Auto-reorder placed for P200"));
+        assertTrue(notification.getMessage().contains("1 case(s)"));
+        assertTrue(notification.getMessage().contains("PO-100231"));
+    }
+
+    @Test
+    void logsSupplierOrderDeliveredNotification() {
+        SupplierOrderDeliveredEvent event = new SupplierOrderDeliveredEvent(
+                1L, "P100", 12, "RO-1", "PO-100231"
+        );
+
+        notificationListener.handleSupplierOrderDelivered(event);
+
+        ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
+        verify(notificationRepository).save(captor.capture());
+
+        Notification notification = captor.getValue();
+        assertTrue(notification.getMessage().contains("PO-100231 delivered: Restocked 12 units for product P100"));
     }
 }
-

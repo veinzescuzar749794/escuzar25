@@ -6,6 +6,7 @@ drop table if exists notifications cascade;
 drop table if exists order_items cascade;
 drop table if exists orders cascade;
 drop table if exists inventory cascade;
+drop table if exists supplier_orders cascade;
 
 create table inventory (
     product_id text primary key,
@@ -31,6 +32,20 @@ create table notifications (
     notification_id bigint generated always as identity primary key,
     message         text not null,
     created_at      timestamptz not null default now()
+);
+
+-- Lab 3: Supplier Orders table for Anti-Corruption Layer
+create table supplier_orders (
+    id          bigint generated always as identity primary key,
+    product_id  text not null,
+    buyer_ref   text not null unique,
+    request_id  text not null unique,
+    po_number   text,
+    cases       integer not null check (cases > 0),
+    units       integer not null check (units > 0),
+    status      text not null,
+    created_at  timestamptz not null default now(),
+    updated_at  timestamptz not null default now()
 );
 
 -- Seed data
