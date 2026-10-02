@@ -32,6 +32,9 @@ public class Order {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    @Column(name = "source_reference", unique = true, length = 120)
+    private String sourceReference;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<OrderItem> items = new ArrayList<>();
 
@@ -40,9 +43,14 @@ public class Order {
     }
 
     public Order(String status, String reason, Instant createdAt) {
+        this(status, reason, createdAt, null);
+    }
+
+    public Order(String status, String reason, Instant createdAt, String sourceReference) {
         this.status = status;
         this.reason = reason;
         this.createdAt = createdAt;
+        this.sourceReference = sourceReference;
     }
 
     public Long getOrderId() {
@@ -68,6 +76,8 @@ public class Order {
     public Instant getCreatedAt() {
         return createdAt;
     }
+
+    public String getSourceReference() { return sourceReference; }
 
     public List<OrderItem> getItems() {
         return items;

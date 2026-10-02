@@ -64,6 +64,7 @@ class SupplierOrderScheduler {
                     order.setPoNumber(existingOrder.poNumber());
                     order.setStatus(SupplierGatewayImpl.mapStatusCode(existingOrder.statusCode()));
                     supplierOrderRepository.save(order);
+                    publishUnknownStatusIfNeeded(order, existingOrder.statusCode());
                     continue;
                 }
 
@@ -79,6 +80,7 @@ class SupplierOrderScheduler {
                 order.setPoNumber(ack.poNumber());
                 order.setStatus(SupplierGatewayImpl.mapStatusCode(ack.statusCode()));
                 supplierOrderRepository.save(order);
+                publishUnknownStatusIfNeeded(order, ack.statusCode());
 
                 log.info("Successfully recovered pending order {}: PO={}, status={}",
                         order.getId(), order.getPoNumber(), order.getStatus());
@@ -132,6 +134,11 @@ class SupplierOrderScheduler {
                     order.setStatus(newStatus);
                     supplierOrderRepository.save(order);
 
+                    if (newStatus == SupplierOrderStatus.UNKNOWN) {
+                        eventPublisher.publishEvent(new SupplierOrderUnknownStatusEvent(order.getId(),
+                                order.getProductId(), order.getBuyerRef(), order.getPoNumber(), statusDto.statusCode()));
+                    }
+
                     if (newStatus == SupplierOrderStatus.DELIVERED) {
                         log.info("Supplier order {} (PO={}) DELIVERED! Publishing domain delivery event for {} units of {}",
                                 order.getId(), order.getPoNumber(), order.getUnits(), order.getProductId());
@@ -151,6 +158,13 @@ class SupplierOrderScheduler {
             } catch (Exception e) {
                 log.warn("Failed to check status for PO={}: {}", order.getPoNumber(), e.getMessage());
             }
+        }
+    }
+
+    private void publishUnknownStatusIfNeeded(SupplierOrder order, int rawStatusCode) {
+        if (order.getStatus() == SupplierOrderStatus.UNKNOWN) {
+            eventPublisher.publishEvent(new SupplierOrderUnknownStatusEvent(order.getId(), order.getProductId(),
+                    order.getBuyerRef(), order.getPoNumber(), rawStatusCode));
         }
     }
 }

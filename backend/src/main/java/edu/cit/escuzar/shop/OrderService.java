@@ -8,6 +8,7 @@ import edu.cit.escuzar.shop.dto.OrderRequest;
 import edu.cit.escuzar.shop.dto.OrderResponse;
 import edu.cit.escuzar.shop.dto.OrderView;
 import edu.cit.escuzar.shop.event.OrderItemDto;
+import edu.cit.escuzar.shop.event.OrderCancelledEvent;
 import edu.cit.escuzar.shop.event.OrderPlacedEvent;
 import edu.cit.escuzar.shop.event.OrderRejectedEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -50,6 +51,16 @@ public class OrderService {
 
     @Transactional
     public OrderResponse placeOrder(OrderRequest request) {
+        return placeOrder(request, null);
+    }
+
+    /** Idempotent entry point for other modules using their own stable source reference. */
+    @Transactional
+    public OrderResponse placeOrder(OrderRequest request, String sourceReference) {
+        if (sourceReference != null && !sourceReference.isBlank()) {
+            Optional<Order> existing = orderRepository.findBySourceReference(sourceReference);
+            if (existing.isPresent()) return responseForExisting(existing.get());
+        }
         List<OrderItemRequest> lineItems = request.effectiveItems();
 
         if (lineItems.isEmpty()) {
@@ -105,7 +116,7 @@ public class OrderService {
         if (!rejectionReasons.isEmpty()) {
             String combinedReason = String.join("; ", rejectionReasons);
 
-            Order order = new Order(REJECTED, combinedReason, Instant.now());
+            Order order = new Order(REJECTED, combinedReason, Instant.now(), sourceReference);
             for (OrderItemRequest itemReq : lineItems) {
                 order.addItem(new OrderItem(itemReq.productId(), itemReq.quantity()));
             }
@@ -134,7 +145,7 @@ public class OrderService {
         }
 
         // Step 3: All items passed validation. Create order and call InventoryService.reserve() for each item.
-        Order order = new Order(CONFIRMED, null, Instant.now());
+        Order order = new Order(CONFIRMED, null, Instant.now(), sourceReference);
         for (OrderItemRequest itemReq : lineItems) {
             order.addItem(new OrderItem(itemReq.productId(), itemReq.quantity()));
         }
@@ -161,6 +172,15 @@ public class OrderService {
         );
     }
 
+    private OrderResponse responseForExisting(Order order) {
+        List<OrderItemOutcome> outcomes = order.getItems().stream()
+                .map(item -> new OrderItemOutcome(item.getProductId(),
+                        CONFIRMED.equals(order.getStatus()) ? "RESERVED" : "REJECTED_DUE_TO_ORDER_FAILURE"))
+                .toList();
+        return new OrderResponse(order.getOrderId(), order.getStatus(), order.getReason(), outcomes,
+                inventoryService.getAllItems());
+    }
+
     @Transactional
     public OrderView cancelOrder(Long orderId) {
         Order order = orderRepository.findById(orderId)
@@ -181,6 +201,8 @@ public class OrderService {
 
         order.setStatus(CANCELLED);
         orderRepository.save(order);
+        eventPublisher.publishEvent(new OrderCancelledEvent(order.getOrderId(), order.getItems().stream()
+                .map(item -> new OrderItemDto(item.getProductId(), item.getQuantity())).toList()));
 
         return toView(order);
     }

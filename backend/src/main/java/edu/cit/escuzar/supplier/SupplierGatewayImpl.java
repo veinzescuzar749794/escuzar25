@@ -2,6 +2,7 @@ package edu.cit.escuzar.supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,16 +19,30 @@ class SupplierGatewayImpl implements SupplierGateway {
     private final ProductSupplierMapping productMapping;
     private final LegacySupplyClient httpClient;
     private final SupplierOrderRepository supplierOrderRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     SupplierGatewayImpl(
             ProductSupplierMapping productMapping,
             LegacySupplyClient httpClient,
-            SupplierOrderRepository supplierOrderRepository
+            SupplierOrderRepository supplierOrderRepository,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.productMapping = productMapping;
         this.httpClient = httpClient;
         this.supplierOrderRepository = supplierOrderRepository;
+        this.eventPublisher = eventPublisher;
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasOpenOrderForProduct(String productId) {
+        return supplierOrderRepository.existsByProductIdAndStatusIn(productId, java.util.List.of(
+                SupplierOrderStatus.PENDING, SupplierOrderStatus.ACCEPTED,
+                SupplierOrderStatus.PICKING, SupplierOrderStatus.SHIPPED));
+    }
+
+    @Override
+    public String getSupplierSku(String productId) { return productMapping.getSupplierSku(productId); }
 
     @Override
     @Transactional
@@ -68,6 +83,7 @@ class SupplierGatewayImpl implements SupplierGateway {
             order.setPoNumber(ack.poNumber());
             order.setStatus(mapStatusCode(ack.statusCode()));
             order = supplierOrderRepository.save(order);
+            publishUnknownStatusIfNeeded(order, ack.statusCode());
 
             log.info("Supplier order {} placed with LegacySupply: PO={}, status={}",
                     order.getId(), order.getPoNumber(), order.getStatus());
@@ -112,5 +128,12 @@ class SupplierGatewayImpl implements SupplierGateway {
                 yield SupplierOrderStatus.UNKNOWN;
             }
         };
+    }
+
+    void publishUnknownStatusIfNeeded(SupplierOrder order, int rawStatusCode) {
+        if (order.getStatus() == SupplierOrderStatus.UNKNOWN) {
+            eventPublisher.publishEvent(new SupplierOrderUnknownStatusEvent(order.getId(), order.getProductId(),
+                    order.getBuyerRef(), order.getPoNumber(), rawStatusCode));
+        }
     }
 }

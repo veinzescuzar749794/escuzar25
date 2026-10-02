@@ -18,6 +18,7 @@ create table orders (
     order_id    bigint generated always as identity primary key,
     status      text not null check (status in ('CONFIRMED', 'REJECTED', 'CANCELLED')),
     reason      text,
+    source_reference text unique,
     created_at  timestamptz not null default now()
 );
 
@@ -46,6 +47,20 @@ create table supplier_orders (
     status      text not null,
     created_at  timestamptz not null default now(),
     updated_at  timestamptz not null default now()
+);
+
+-- Lab 4: persistent Tiangge feed cursor and marketplace-to-shop order mapping.
+create table tiangge_checkpoint (
+    id integer primary key check (id = 1),
+    cursor bigint not null default 0
+);
+insert into tiangge_checkpoint (id, cursor) values (1, 0) on conflict (id) do nothing;
+
+create table tiangge_orders (
+    marketplace_order_id text primary key,
+    shop_order_id bigint references orders(order_id),
+    status text not null,
+    lines_json text not null
 );
 
 -- Seed data

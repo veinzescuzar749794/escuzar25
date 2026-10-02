@@ -37,5 +37,12 @@ legacy-supply:
   client-id: ${LS_CLIENT_ID:22-1382-413}
   api-key: ${LS_API_KEY:}
 
+tiangge:
+  base-url: ${TIANGGE_BASE_URL:https://legacysupply.onrender.com/tiangge/v1}
+  client-id: ${TIANGGE_CLIENT_ID:${LS_CLIENT_ID:22-1382-413}}
+  api-key: ${TIANGGE_API_KEY:${LS_API_KEY:}}
+  heartbeat-ms: ${TIANGGE_HEARTBEAT_MS:30000}
+  feed-poll-ms: ${TIANGGE_FEED_POLL_MS:3000}
+
 server:
   port: ${PORT:8080}

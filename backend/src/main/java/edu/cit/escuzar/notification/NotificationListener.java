@@ -6,6 +6,7 @@ import edu.cit.escuzar.shop.event.OrderRejectedEvent;
 import edu.cit.escuzar.supplier.SupplierGateway;
 import edu.cit.escuzar.supplier.SupplierOrderDeliveredEvent;
 import edu.cit.escuzar.supplier.SupplierOrderResult;
+import edu.cit.escuzar.supplier.SupplierOrderUnknownStatusEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -58,6 +59,14 @@ class NotificationListener {
     public void handleSupplierOrderDelivered(SupplierOrderDeliveredEvent event) {
         String msg = "Supplier order " + event.poNumber() + " delivered: Restocked "
                 + event.unitsDelivered() + " units for product " + event.productId();
+        notificationRepository.save(new Notification(msg, Instant.now()));
+    }
+
+    @EventListener
+    public void handleUnknownSupplierStatus(SupplierOrderUnknownStatusEvent event) {
+        String msg = "Review supplier order " + event.buyerRef() + " (PO: " + event.poNumber()
+                + ", product: " + event.productId() + "): unknown status code " + event.rawStatusCode()
+                + ". Inventory was not restocked.";
         notificationRepository.save(new Notification(msg, Instant.now()));
     }
 }

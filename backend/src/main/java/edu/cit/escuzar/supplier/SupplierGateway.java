@@ -6,6 +6,10 @@ package edu.cit.escuzar.supplier;
  */
 public interface SupplierGateway {
 
+    /** Returns whether an accepted or in-flight supplier order can replenish this product. */
+    boolean hasOpenOrderForProduct(String productId);
+    String getSupplierSku(String productId);
+
     /**
      * Places a purchase order for the requested product and units needed.
      * Converts internal units to supplier case quantity (rounding up), persists

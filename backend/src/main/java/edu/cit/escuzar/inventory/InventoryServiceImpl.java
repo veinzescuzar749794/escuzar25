@@ -3,6 +3,7 @@ package edu.cit.escuzar.inventory;
 import edu.cit.escuzar.inventory.dto.InventoryItemView;
 import edu.cit.escuzar.inventory.dto.ReservationResult;
 import edu.cit.escuzar.inventory.event.LowStockEvent;
+import edu.cit.escuzar.inventory.event.InventoryStockChangedEvent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
@@ -77,6 +78,7 @@ class InventoryServiceImpl implements InventoryService {
 
         item.setStock(item.getStock() - quantity);
         inventoryRepository.save(item);
+        eventPublisher.publishEvent(new InventoryStockChangedEvent(item.getProductId(), item.getStock()));
 
         if (item.getStock() < lowStockThreshold) {
             eventPublisher.publishEvent(new LowStockEvent(
@@ -102,6 +104,7 @@ class InventoryServiceImpl implements InventoryService {
             InventoryItem item = maybeItem.get();
             item.setStock(item.getStock() + quantity);
             inventoryRepository.save(item);
+            eventPublisher.publishEvent(new InventoryStockChangedEvent(item.getProductId(), item.getStock()));
         }
     }
 

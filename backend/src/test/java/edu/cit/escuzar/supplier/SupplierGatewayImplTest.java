@@ -3,6 +3,7 @@ package edu.cit.escuzar.supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -18,11 +19,12 @@ class SupplierGatewayImplTest {
     private final ProductSupplierMapping productMapping = new ProductSupplierMapping();
     private final LegacySupplyClient httpClient = mock(LegacySupplyClient.class);
     private final SupplierOrderRepository repository = mock(SupplierOrderRepository.class);
+    private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
     private SupplierGatewayImpl gateway;
 
     @BeforeEach
     void setUp() {
-        gateway = new SupplierGatewayImpl(productMapping, httpClient, repository);
+        gateway = new SupplierGatewayImpl(productMapping, httpClient, repository, eventPublisher);
     }
 
     @Test
@@ -77,6 +79,25 @@ class SupplierGatewayImplTest {
         assertEquals(99L, result.orderId());
         assertEquals(SupplierOrderStatus.PENDING, result.status());
         assertTrue(result.message().contains("PENDING due to supplier unavailability"));
+    }
+
+    @Test
+    void publishesAnAlertWhenSupplierReturnsAnUnknownStatus() {
+        when(repository.saveAndFlush(any(SupplierOrder.class))).thenAnswer(inv -> {
+            SupplierOrder o = inv.getArgument(0);
+            if (o.getId() == null) o.setId(43L);
+            return o;
+        });
+        when(repository.save(any(SupplierOrder.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(httpClient.placePurchaseOrder(any(), anyInt(), any(), any())).thenReturn(
+                new LegacySupplyXmlParser.PurchaseOrderAckDto(
+                        "PO-UNKNOWN", 999, "WQC-6004", 1, "CS", "RO-43", "2026-10-02T10:00:00Z"));
+
+        SupplierOrderResult result = gateway.placeOrder("P100", 1);
+
+        assertEquals(SupplierOrderStatus.UNKNOWN, result.status());
+        verify(eventPublisher).publishEvent(new SupplierOrderUnknownStatusEvent(
+                43L, "P100", "RO-43", "PO-UNKNOWN", 999));
     }
 
     @Test

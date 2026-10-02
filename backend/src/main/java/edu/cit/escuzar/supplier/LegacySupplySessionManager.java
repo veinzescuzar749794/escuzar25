@@ -3,6 +3,7 @@ package edu.cit.escuzar.supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import edu.cit.escuzar.AppInstance;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -23,13 +24,15 @@ class LegacySupplySessionManager {
     private static final long PROACTIVE_REFRESH_SECONDS = 100; // 20s safety buffer
 
     private final LegacySupplyProperties properties;
+    private final AppInstance instance;
     private final HttpClient httpClient;
 
     private volatile String currentToken = null;
     private volatile Instant tokenAcquiredAt = null;
 
-    LegacySupplySessionManager(LegacySupplyProperties properties) {
+    LegacySupplySessionManager(LegacySupplyProperties properties, AppInstance instance) {
         this.properties = properties;
+        this.instance = instance;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(3))
                 .build();
@@ -69,6 +72,7 @@ class LegacySupplySessionManager {
                         .uri(URI.create(properties.getBaseUrl() + "/auth/token"))
                         .timeout(Duration.ofSeconds(3))
                         .header("Content-Type", "application/xml")
+                        .header("X-Client-Instance", instance.id())
                         .POST(HttpRequest.BodyPublishers.ofString(authXml))
                         .build();
 

@@ -8,6 +8,7 @@ import edu.cit.escuzar.supplier.SupplierGateway;
 import edu.cit.escuzar.supplier.SupplierOrderDeliveredEvent;
 import edu.cit.escuzar.supplier.SupplierOrderResult;
 import edu.cit.escuzar.supplier.SupplierOrderStatus;
+import edu.cit.escuzar.supplier.SupplierOrderUnknownStatusEvent;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -93,5 +94,18 @@ class NotificationListenerTest {
 
         Notification notification = captor.getValue();
         assertTrue(notification.getMessage().contains("PO-100231 delivered: Restocked 12 units for product P100"));
+    }
+
+    @Test
+    void logsUnknownSupplierStatusForAdministrativeReview() {
+        SupplierOrderUnknownStatusEvent event = new SupplierOrderUnknownStatusEvent(
+                43L, "P100", "RO-43", "PO-UNKNOWN", 999);
+
+        notificationListener.handleUnknownSupplierStatus(event);
+
+        ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
+        verify(notificationRepository).save(captor.capture());
+        assertTrue(captor.getValue().getMessage().contains("unknown status code 999"));
+        assertTrue(captor.getValue().getMessage().contains("Inventory was not restocked"));
     }
 }

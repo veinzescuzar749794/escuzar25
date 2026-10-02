@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 interface OrderRepository extends JpaRepository<Order, Long> {
+    java.util.Optional<Order> findBySourceReference(String sourceReference);
     @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items ORDER BY o.createdAt DESC")
     List<Order> findAllByOrderByCreatedAtDesc();
 }

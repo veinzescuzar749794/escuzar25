@@ -3,6 +3,7 @@ package edu.cit.escuzar.supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import edu.cit.escuzar.AppInstance;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -31,10 +32,12 @@ class LegacySupplyHttpClient implements LegacySupplyClient {
     private final LegacySupplyProperties properties;
     private final LegacySupplySessionManager sessionManager;
     private final HttpClient httpClient;
+    private final AppInstance instance;
 
-    LegacySupplyHttpClient(LegacySupplyProperties properties, LegacySupplySessionManager sessionManager) {
+    LegacySupplyHttpClient(LegacySupplyProperties properties, LegacySupplySessionManager sessionManager, AppInstance instance) {
         this.properties = properties;
         this.sessionManager = sessionManager;
+        this.instance = instance;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(CALL_TIMEOUT)
                 .build();
@@ -63,6 +66,7 @@ class LegacySupplyHttpClient implements LegacySupplyClient {
                         .header("Content-Type", "application/xml")
                         .header("X-LS-Session", token)
                         .header("X-Request-Id", requestId)
+                        .header("X-Client-Instance", instance.id())
                         .POST(HttpRequest.BodyPublishers.ofString(xmlBody))
                         .build();
 
@@ -141,6 +145,7 @@ class LegacySupplyHttpClient implements LegacySupplyClient {
                         .uri(URI.create(properties.getBaseUrl() + "/purchase-orders/" + poNumber))
                         .timeout(CALL_TIMEOUT)
                         .header("X-LS-Session", token)
+                        .header("X-Client-Instance", instance.id())
                         .GET()
                         .build();
 
@@ -201,6 +206,7 @@ class LegacySupplyHttpClient implements LegacySupplyClient {
                     .uri(URI.create(properties.getBaseUrl() + "/purchase-orders?buyerRef=" + encodedRef))
                     .timeout(CALL_TIMEOUT)
                     .header("X-LS-Session", token)
+                    .header("X-Client-Instance", instance.id())
                     .GET()
                     .build();
 

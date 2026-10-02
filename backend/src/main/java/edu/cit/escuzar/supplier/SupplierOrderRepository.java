@@ -10,6 +10,7 @@ import java.util.Optional;
  * Package-private Spring Data repository for SupplierOrder entities.
  */
 interface SupplierOrderRepository extends JpaRepository<SupplierOrder, Long> {
+    boolean existsByProductIdAndStatusIn(String productId, java.util.Collection<SupplierOrderStatus> statuses);
 
     Optional<SupplierOrder> findByRequestId(String requestId);
 

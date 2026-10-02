@@ -1,4 +1,4 @@
-# Modular Monolith: Order + Inventory + Notification (Spring Boot + React + Supabase)
+# Modular Monolith: Order + Inventory + Notification + Supplier + Tiangge (Spring Boot + React + Supabase)
 
 > The package root is `edu.cit.escuzar`.
 
@@ -7,7 +7,7 @@
 ```
 backend/
   src/main/java/edu/cit/escuzar/
-    ShopApplication.java            <- @SpringBootApplication, scans all 3 modules
+    ShopApplication.java            <- @SpringBootApplication, scans the modular monolith
     CorsConfig.java                  <- shared CORS infra (http://localhost:5173)
     shop/                            <- Order module
       Order.java, OrderItem.java     <- JPA entities (orders, order_items)
@@ -30,13 +30,21 @@ backend/
       NotificationListener.java      <- package-private @EventListener (consumes events)
       NotificationController.java    <- REST controller (/api/notifications)
       dto/                           <- NotificationResponse
+    supplier/                        <- LegacySupply anti-corruption adapter (Lab 3)
+    channel/                         <- Tiangge marketplace adapter (Lab 4)
+      ChannelGateway.java            <- public module interface
+      ChannelService.java             <- package-private feed, decision and stock coordinator
+      ChannelHttpClient.java          <- package-private Tiangge protocol client
+    AppInstance.java                 <- shared runtime UUID for both external adapters
 frontend/                            <- Vite + React (Multi-item cart, live inventory, order history, activity feed)
-sql/schema.sql                       <- Complete recreation script (inventory, orders, order_items, notifications + seed data)
+sql/schema.sql                       <- Destructive recreation script with seed data
+sql/bootstrap.sql                    <- Non-destructive setup for empty or partial databases
 ```
 
 ### Module Boundary Enforcement
 - **Inventory boundary:** `InventoryServiceImpl` and `InventoryRepository` are package-private. `OrderService` only depends on the public `InventoryService` interface and DTOs.
-- **Notification boundary:** The `notification` package depends **only** on event records (`OrderPlacedEvent`, `OrderRejectedEvent`, `LowStockEvent`). It never imports or calls `OrderService` or `InventoryService`. Conversely, neither `shop` nor `inventory` imports anything from `edu.cit.escuzar.notification`. Communication is 100% event-driven via Spring's `ApplicationEventPublisher`.
+- **Notification boundary:** Notifications consume domain events from the order, inventory, and supplier modules. The existing low-stock reorder listener calls only the public `SupplierGateway`; it does not call `OrderService` or `InventoryService`. Neither `shop` nor `inventory` imports the notification or channel packages.
+- **Channel boundary:** The `channel` package exposes only `ChannelGateway`. The HTTP client, JSON/feed handling, persistence types, and coordinator are package-private. It calls the public Order, Inventory, and Supplier module APIs; none of those modules imports or refers to Tiangge.
 
 ---
 
@@ -58,6 +66,14 @@ sql/schema.sql                       <- Complete recreation script (inventory, o
 
 ## Running the Application
 
+### Lab 4 Tiangge Marketplace
+
+The marketplace adapter is enabled when `TIANGGE_CLIENT_ID` and `TIANGGE_API_KEY` are configured. Copy `backend/.env.example` to `backend/.env`, fill in your local database credentials and API key, and apply `sql/lab4-migration.sql` to an existing Lab 3 database. The key is read from the environment and must not be committed. `TIANGGE_API_KEY` falls back to `LS_API_KEY` because both services use the same key.
+
+On startup the application creates and logs a new instance UUID, heartbeats Tiangge, publishes listings and current stock, then begins polling the persisted feed cursor. Keep the Spring Boot process running for live grading. Every LegacySupply and Tiangge request carries that instance UUID.
+
+For an empty or partially initialized database, apply `sql/bootstrap.sql`. It creates missing tables and adds seed products only when absent; it does not drop tables or overwrite existing stock. `sql/schema.sql` is a reset script and drops the application tables. Record the three marketplace reflection answers in [REFLECTION.md](REFLECTION.md).
+
 ### Backend
 ```bash
 cd backend
@@ -65,7 +81,7 @@ cd backend
 export $(cat .env | xargs)
 ./mvnw spring-boot:run
 # On Windows (PowerShell):
-Get-Content .env | ForEach-Object { $k, $v = $_.Split('=', 2); [System.Environment]::SetEnvironmentVariable($k, $v) }
+Get-Content .env | Where-Object { $_ -and -not $_.StartsWith('#') } | ForEach-Object { $k, $v = $_.Split('=', 2); [System.Environment]::SetEnvironmentVariable($k, $v) }
 .\mvnw.cmd spring-boot:run
 ```
 Server starts on `http://localhost:8080`.
